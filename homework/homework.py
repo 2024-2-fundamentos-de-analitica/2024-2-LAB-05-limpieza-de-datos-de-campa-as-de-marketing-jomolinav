@@ -3,24 +3,49 @@ Escriba el codigo que ejecute la accion solicitada.
 """
 
 # pylint: disable=import-outside-toplevel
+import pandas as pd
+import zipfile as zp
+
+#Cliente
+
+listcv = []
+for a in range(10):
+    path = "files/input/bank-marketing-campaing-" + str(a) + ".csv.zip"
+    archivo = zp.ZipFile(path, "r")
+    pathotro = "bank_marketing_" + str(a) + ".csv"
+    csv =  archivo.open(pathotro)
+    name = "csv" + str(a)
+    listcv.append(pd.read_csv(csv))
 
 
+df_concatenado = pd.concat(listcv, ignore_index=True)
+#print(df_concatenado.columns)
+client = df_concatenado[["client_id", "age", "job", "marital", "education", "credit_default", "mortgage"]]
+client["job"] = client["job"].str.replace(".", "").str.replace("-", "_")
+client["education"] = client["education"].str.replace(".", "_").str.replace("unknown", "<NA>")
+client["credit_default"] = client["credit_default"].str.replace("unknown", "0").str.replace("yes", "1").str.replace("no", "0")
+client["mortgage"] = client["mortgage"].str.replace("unknown", "0").str.replace("yes", "1").str.replace("no", "0")
+#print(client)
+
+client.to_csv("files/output/client.csv", index=False)
+
+#Campaign
+#print(df_concatenado.columns)
+campana = df_concatenado[["client_id", "number_contacts", "contact_duration", "previous_campaign_contacts", "previous_outcome", "campaign_outcome"]]
+campana["previous_outcome"]  = campana["previous_outcome"].str.replace("unknown", "0").str.replace("success", "1").str.replace("nonexistent", "0").str.replace("failure", "0")
+campana["campaign_outcome"]  = campana["campaign_outcome"].str.replace("unknown", "0").str.replace("yes", "1").str.replace("no", "0")
+campana["last_contact_date"] = pd.to_datetime("2022-" + df_concatenado["month"].astype(str) + "-" + df_concatenado["day"].astype(str),format="%Y-%b-%d" )
+
+campana.to_csv("files/output/campaign.csv", index=False)
+
+#economics
+
+economics =df_concatenado[["client_id", "cons_price_idx", "euribor_three_months"]]
+economics.to_csv("files/output/economics.csv", index=False)
+
+print(campana.columns)
 def clean_campaign_data():
     """
-    En esta tarea se le pide que limpie los datos de una campaña de
-    marketing realizada por un banco, la cual tiene como fin la
-    recolección de datos de clientes para ofrecerls un préstamo.
-
-    La información recolectada se encuentra en la carpeta
-    files/input/ en varios archivos csv.zip comprimidos para ahorrar
-    espacio en disco.
-
-    Usted debe procesar directamente los archivos comprimidos (sin
-    descomprimirlos). Se desea partir la data en tres archivos csv
-    (sin comprimir): client.csv, campaign.csv y economics.csv.
-    Cada archivo debe tener las columnas indicadas.
-
-    Los tres archivos generados se almacenarán en la carpeta files/output/.
 
     client.csv:
     - client_id
